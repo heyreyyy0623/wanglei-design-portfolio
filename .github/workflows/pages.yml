@@ -1,0 +1,33 @@
+name: Publish portfolio
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore website
+        run: |
+          cat portfolio.tar.gz.part* > /tmp/portfolio.tar.gz
+          echo '066e4964bd162de775e0c7d3eed42143b4b48a85e0ce6f1bf671d44d2cc3d248  /tmp/portfolio.tar.gz' | sha256sum -c -
+          mkdir -p public
+          tar -xzf /tmp/portfolio.tar.gz -C public
+          test -f public/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+      - uses: actions/deploy-pages@v4
+        id: deployment
